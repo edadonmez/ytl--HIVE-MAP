@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HIVE-MAP PRO - Search & Rescue Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      background: #050505;
+      color: #F5F5F5;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .container {
+      max-width: 420px;
+      margin: 0 auto;
+      padding-bottom: 24px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      border-bottom: 1px solid #1A1A1E;
+    }
+    .appName {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+    .headerRight {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .statusBadge {
+      display: flex;
+      align-items: center;
+      background: #0D0D0F;
+      padding: 6px 10px;
+      border-radius: 4px;
+      border: 1px solid #00FF41;
+      animation: blink 1.2s ease-in-out infinite;
+    }
+    .statusDot {
+      width: 6px;
+      height: 6px;
+      border-radius: 3px;
+      background: #00FF41;
+      margin-right: 8px;
+    }
+    .statusText {
+      font-size: 11px;
+      color: #00FF41;
+      letter-spacing: 1px;
+    }
+    .icons {
+      display: flex;
+      gap: 8px;
+    }
+    .iconBox { text-align: center; }
+    .iconText { font-size: 14px; }
+    .iconLabel {
+      font-size: 9px;
+      color: #6B6B70;
+    }
+
+    /* RADAR */
+    .radarSection {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 0 36px;
+    }
+    .radarContainer {
+      position: relative;
+      width: 320px;
+      height: 320px;
+    }
+    #radarSvg {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    .sweepWrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 320px;
+      height: 320px;
+      transform-origin: 160px 160px;
+      animation: sweep 4s linear infinite;
+      pointer-events: none;
+    }
+    .spectrumSection {
+      margin: 0 20px 16px;
+      padding: 16px;
+      background: #0D0D0F;
+      border-radius: 8px;
+      border: 1px solid #1A1A1E;
+    }
+    .sectionTitle {
+      font-size: 11px;
+      color: #6B6B70;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+    }
+    .waveformContainer {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 52px;
+    }
+    .waveformBar {
+      flex: 1;
+      min-width: 4px;
+      border-radius: 2px;
+      background: #00D4FF;
+      transition: height 0.2s ease;
+    }
+    .waveformBar.alert { background: #FF3B30; }
+    .voiceAlert {
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(255, 59, 48, 0.2);
+      border-radius: 4px;
+      border: 1px solid #FF3B30;
+      text-align: center;
+      animation: alertFlash 0.6s ease-in-out infinite;
+    }
+    .voiceAlertText {
+      font-size: 12px;
+      font-weight: 700;
+      color: #FF3B30;
+      letter-spacing: 1px;
+    }
+    .telemetryPanel {
+      margin: 0 20px;
+      padding: 16px;
+      background: #0D0D0F;
+      border-radius: 8px;
+      border: 1px solid #1A1A1E;
+    }
+    .telemetryGrid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .telemetryItem { flex: 1; min-width: 45%; }
+    .telemetryLabel {
+      font-size: 10px;
+      color: #6B6B70;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    .telemetryValue {
+      font-size: 14px;
+      font-weight: 600;
+      color: #00D4FF;
+    }
+    .telemetryValue.good { color: #00FF41; }
+    .telemetryValue.bad { color: #FF3B30; }
+    .actionBar {
+      display: flex;
+      gap: 12px;
+      margin: 20px 20px 0;
+    }
+    .emergencyButton {
+      flex: 1;
+      padding: 16px;
+      background: #FF3B30;
+      border: 1px solid rgba(255, 59, 48, 0.5);
+      border-radius: 8px;
+      color: white;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      cursor: pointer;
+    }
+    .calibrateButton {
+      flex: 1;
+      padding: 16px;
+      background: #0D0D0F;
+      border: 1px solid #00D4FF;
+      border-radius: 8px;
+      color: #00D4FF;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      cursor: pointer;
+    }
+    .floatingLabel {
+      position: absolute;
+      background: rgba(255, 59, 48, 0.9);
+      padding: 6px 10px;
+      border-radius: 4px;
+      border: 1px solid #FF3B30;
+      font-size: 10px;
+      letter-spacing: 1px;
+      white-space: nowrap;
+      z-index: 5;
+    }
+    .radarLabels {
+      position: absolute;
+      bottom: -28px;
+      right: 0;
+      display: flex;
+      gap: 16px;
+    }
+    .legendItem {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .legendDot {
+      width: 8px;
+      height: 8px;
+      border-radius: 4px;
+    }
+    .legendDot.victim { background: #FF3B30; }
+    .legendDot.rescuer { background: #00FF41; }
+    .legendText {
+      font-size: 10px;
+      color: #6B6B70;
+      letter-spacing: 1px;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    @keyframes sweep {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes alertFlash {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <span class="appName">HIVE-MAP PRO</span>
+      <div class="headerRight">
+        <div class="statusBadge">
+          <span class="statusDot"></span>
+          <span class="statusText">SCANNING... [NET-MESH: ACTIVE]</span>
+        </div>
+        <div class="icons">
+          <div class="iconBox">
+            <div class="iconText">📶</div>
+            <div class="iconLabel">4G</div>
+          </div>
+          <div class="iconBox">
+            <div class="iconText">🔋</div>
+            <div class="iconLabel">87%</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="radarSection">
+      <div class="radarContainer">
+        <svg id="radarSvg" width="320" height="320">
+          <circle cx="160" cy="160" r="35" fill="none" stroke="#1A1A1E" stroke-width="0.5"/>
+          <circle cx="160" cy="160" r="70" fill="none" stroke="#1A1A1E" stroke-width="0.5"/>
+          <circle cx="160" cy="160" r="105" fill="none" stroke="#1A1A1E" stroke-width="0.5"/>
+          <circle cx="160" cy="160" r="140" fill="none" stroke="#1A1A1E" stroke-width="0.5"/>
+          <line x1="160" y1="20" x2="160" y2="300" stroke="#1A1A1E" stroke-width="0.5"/>
+          <line x1="20" y1="160" x2="300" y2="160" stroke="#1A1A1E" stroke-width="0.5"/>
+          <g id="blips"></g>
+        </svg>
+        <div class="sweepWrapper">
+          <svg width="320" height="320">
+            <line x1="160" y1="160" x2="160" y2="20" stroke="#00D4FF" stroke-width="2" stroke-opacity="0.9"/>
+          </svg>
+        </div>
+        <div id="floatingLabel" class="floatingLabel" style="display: none;"></div>
+        <div class="radarLabels">
+          <div class="legendItem">
+            <span class="legendDot victim"></span>
+            <span class="legendText">VICTIM</span>
+          </div>
+          <div class="legendItem">
+            <span class="legendDot rescuer"></span>
+            <span class="legendText">RESCUER</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="spectrumSection">
+      <div class="sectionTitle">AUDIO SPECTRUM</div>
+      <div class="waveformContainer" id="waveform"></div>
+      <div id="voiceAlert" class="voiceAlert" style="display: none;">
+        <span class="voiceAlertText">⚠ HUMAN VOICE DETECTED (<span id="voiceMatch">98</span>% MATCH)</span>
+      </div>
+    </section>
+
+    <div class="telemetryPanel">
+      <div class="telemetryGrid">
+        <div class="telemetryItem">
+          <div class="telemetryLabel">LAT</div>
+          <div class="telemetryValue" id="lat">41.00820°</div>
+        </div>
+        <div class="telemetryItem">
+          <div class="telemetryLabel">LONG</div>
+          <div class="telemetryValue" id="long">28.97840°</div>
+        </div>
+        <div class="telemetryItem">
+          <div class="telemetryLabel">AIR QUALITY</div>
+          <div class="telemetryValue" id="airQuality">Good</div>
+        </div>
+        <div class="telemetryItem">
+          <div class="telemetryLabel">DEVICE COUNT</div>
+          <div class="telemetryValue" id="deviceCount">12</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actionBar">
+      <button class="emergencyButton">EMERGENCY STOP</button>
+      <button class="calibrateButton">CALIBRATE</button>
+    </div>
+  </div>
+
+  <script>
+    const RADAR_CENTER = 160;
+    const RADAR_RADIUS = 140;
+
+    const polarToCart = (angle, radius) => {
+      const rad = (angle * Math.PI) / 180 - Math.PI / 2;
+      return {
+        x: RADAR_CENTER + radius * Math.cos(rad),
+        y: RADAR_CENTER + radius * Math.sin(rad)
+      };
+    };
+
+    const generateBlips = () => {
+      const blips = [];
+      const victimCount = 1 + Math.floor(Math.random() * 2);
+      const rescuerCount = 2 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < victimCount; i++) {
+        blips.push({ type: 'victim', angle: Math.random() * 360, dist: 0.8 + Math.random() * 2.4, rssi: -72 - Math.floor(Math.random() * 20) });
+      }
+      for (let i = 0; i < rescuerCount; i++) {
+        blips.push({ type: 'rescuer', angle: Math.random() * 360, dist: 0.5 + Math.random() * 2.0, rssi: -55 - Math.floor(Math.random() * 15) });
+      }
+      return blips;
+    };
+
+    const renderBlips = (blips) => {
+      const g = document.getElementById('blips');
+      g.innerHTML = '';
+      let primaryVictim = null;
+      blips.forEach(blip => {
+        const radius = (blip.dist / 3.5) * RADAR_RADIUS;
+        const pos = polarToCart(blip.angle, radius);
+        const isVictim = blip.type === 'victim';
+        if (isVictim) primaryVictim = blip;
+        const color = isVictim ? '#FF3B30' : '#00FF41';
+        const r = isVictim ? 6 : 4;
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', pos.x);
+        circle.setAttribute('cy', pos.y);
+        circle.setAttribute('r', r);
+        circle.setAttribute('fill', color);
+        circle.setAttribute('stroke', '#F5F5F5');
+        circle.setAttribute('stroke-width', '1');
+        circle.setAttribute('stroke-opacity', '0.5');
+        g.appendChild(circle);
+      });
+      const label = document.getElementById('floatingLabel');
+      if (primaryVictim) {
+        const pos = polarToCart(primaryVictim.angle, (primaryVictim.dist / 3.5) * RADAR_RADIUS);
+        label.textContent = `DIST: ${primaryVictim.dist.toFixed(1)}m | RSSI: ${primaryVictim.rssi}dBm`;
+        label.style.left = Math.max(8, Math.min(246, pos.x - 74)) + 'px';
+        label.style.top = Math.max(8, Math.min(282, pos.y - 38)) + 'px';
+        label.style.display = 'block';
+      } else {
+        label.style.display = 'none';
+      }
+    };
+
+    let waveformData = Array(24).fill(0).map(() => 0.3 + Math.random() * 0.4);
+    const waveformEl = document.getElementById('waveform');
+    waveformEl.innerHTML = waveformData.map(() => '<div class="waveformBar"></div>').join('');
+    const bars = waveformEl.querySelectorAll('.waveformBar');
+
+    const updateWaveform = () => {
+      waveformData = Array(24).fill(0).map(() => 0.2 + Math.random() * 0.7);
+      const maxVal = Math.max(...waveformData);
+      bars.forEach((bar, i) => {
+        bar.style.height = Math.max(4, waveformData[i] * 48) + 'px';
+        bar.classList.toggle('alert', waveformData[i] > 0.9);
+      });
+      const alertEl = document.getElementById('voiceAlert');
+      if (maxVal > 0.92) {
+        document.getElementById('voiceMatch').textContent = Math.min(98, Math.floor(90 + maxVal * 10));
+        alertEl.style.display = 'block';
+      } else {
+        alertEl.style.display = 'none';
+      }
+    };
+
+    let telemetry = { lat: 41.0082, long: 28.9784, airQuality: 'Good', deviceCount: 12 };
+    const updateTelemetry = () => {
+      telemetry.lat += (Math.random() - 0.5) * 0.0001;
+      telemetry.long += (Math.random() - 0.5) * 0.0001;
+      telemetry.airQuality = Math.random() > 0.85 ? 'Poor' : 'Good';
+      telemetry.deviceCount = 10 + Math.floor(Math.random() * 6);
+      document.getElementById('lat').textContent = telemetry.lat.toFixed(5) + '°';
+      document.getElementById('long').textContent = telemetry.long.toFixed(5) + '°';
+      const airEl = document.getElementById('airQuality');
+      airEl.textContent = telemetry.airQuality;
+      airEl.className = 'telemetryValue ' + (telemetry.airQuality === 'Good' ? 'good' : 'bad');
+      document.getElementById('deviceCount').textContent = telemetry.deviceCount;
+    };
+
+    renderBlips(generateBlips());
+    updateWaveform();
+    bars.forEach((bar, i) => { bar.style.height = Math.max(4, waveformData[i] * 48) + 'px'; });
+
+    setInterval(() => renderBlips(generateBlips()), 3000);
+    setInterval(updateWaveform, 800);
+    setInterval(updateTelemetry, 2000);
+  </script>
+</body>
+</html>

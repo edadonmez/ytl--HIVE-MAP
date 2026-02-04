@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "HIVE-MAP PRO",
+    "slug": "hive-map-pro",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#050505"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hivemap.pro"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#050505"
+      },
+      "package": "com.hivemap.pro"
+    },
+  }
+}
